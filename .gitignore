@@ -1,5 +1,8 @@
 build/
-CUDA/CUDA/in.ppm
+*.ppm
 *.pgm
 CUDA/CUDA.sdf
 *.opensdf
+*.suo
+*.pdb
+CUDA/Debug/cudart32_75.dll
