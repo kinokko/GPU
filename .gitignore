@@ -1,1 +1,5 @@
 build/
+CUDA/CUDA/in.ppm
+*.pgm
+CUDA/CUDA.sdf
+*.opensdf
