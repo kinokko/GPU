@@ -10,7 +10,7 @@
 #include <helper_timer.h>
 
 #include "hist-equ.h"
-#include "hist-equ-gpu.cuh"
+#include "hist-equ-gpu.h"
 
 void run_cpu_color_test(PPM_IMG img_in);
 void run_gpu_color_test(PPM_IMG img_in);

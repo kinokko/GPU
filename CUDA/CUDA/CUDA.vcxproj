@@ -28,7 +28,7 @@
     <CudaCompile Include="..\..\Source\main.cu" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\Source\hist-equ-gpu.cuh" />
+    <ClInclude Include="..\..\Source\hist-equ-gpu.h" />
     <ClInclude Include="..\..\Source\hist-equ.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
