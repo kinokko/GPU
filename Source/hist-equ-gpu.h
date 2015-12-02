@@ -6,7 +6,7 @@
 void HistTest(PGM_IMG img_in);
 void HistogramGPU(int * hist_out, unsigned char * img_in, int img_size, int nbr_bin);
 
-__global__ void HistogramInitGpuAction(int * histOut, int histSize);
+__global__ void MemsetGPU(int * histOut, int histSize);
 __global__ void HistogramGpuAction(int * histOut, unsigned char * imgIn, int imgSize);
 
 #endif

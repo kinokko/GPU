@@ -16,7 +16,7 @@ void HistogramGPU(int * hist_out, unsigned char* img_in, int img_size, int nbr_b
 	// Initialize the histogram
 	int* d_hist;
 	cudaMalloc(&d_hist, nbr_bin * sizeof(int));
-	HistogramInitGpuAction<<<numSMs * 32, threadsPerBlock>>>(d_hist, nbr_bin);
+	MemsetGPU<<<numSMs * 32, threadsPerBlock>>>(d_hist, nbr_bin);
 
 	//Click the counter
 	unsigned char* imgData;
@@ -30,7 +30,7 @@ void HistogramGPU(int * hist_out, unsigned char* img_in, int img_size, int nbr_b
 	cudaMemcpy(hist_out, d_hist, nbr_bin * sizeof(int), cudaMemcpyDeviceToHost);
 }
 
-__global__ void HistogramInitGpuAction(int* histOut, int nbr_bin) {
+__global__ void MemsetGPU(int* histOut, int nbr_bin) {
 	for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < nbr_bin; i += blockDim.x * gridDim.x) {
 		histOut[i] = 0;
 	}
