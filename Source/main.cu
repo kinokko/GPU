@@ -48,7 +48,7 @@ void run_gpu_gray_test(PGM_IMG img_in)
 {
     printf("Starting GPU processing...\n");
     //TODO: run your GPU implementation here
-    //img_in = img_in; // To avoid warning...
+    HistTest(img_in);
 }
 
 void run_cpu_color_test(PPM_IMG img_in)
