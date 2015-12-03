@@ -47,8 +47,19 @@ void run_gpu_color_test(PPM_IMG img_in)
 void run_gpu_gray_test(PGM_IMG img_in)
 {
     printf("Starting GPU processing...\n");
+	StopWatchInterface *timer = NULL;
+	sdkCreateTimer(&timer);
+	sdkStartTimer(&timer);
     //TODO: run your GPU implementation here
-    HistTest(img_in);
+
+
+	PGM_IMG img_obuf = HistTest(img_in);
+	sdkStopTimer(&timer);
+	printf("Processing time: %f (ms)\n", sdkGetTimerValue(&timer));
+	sdkDeleteTimer(&timer);
+
+	write_pgm(img_obuf, "out_gpu.pgm");
+	free_pgm(img_obuf);
 }
 
 void run_cpu_color_test(PPM_IMG img_in)
