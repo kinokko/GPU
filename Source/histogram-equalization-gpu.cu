@@ -4,8 +4,6 @@
 
 PGM_IMG HistTest(PGM_IMG img_in) {
 	int nbr_bin = 256;
-	int threadsPerBlock = 256;
-	int numSMs = 192;
 	int* d_hist;
 	cudaMalloc(&d_hist, sizeof(int)*nbr_bin);
 
@@ -27,7 +25,7 @@ PGM_IMG HistTest(PGM_IMG img_in) {
 	int* d_d;
 	cudaMalloc(&d_d, sizeof(int));
 
-	ConstructLUTGPU(d_lut, d_hist, d_min, d_d, nbr_bin, img_size, threadsPerBlock, numSMs);
+	ConstructLUTGPU(d_lut, d_hist, d_min, d_d, nbr_bin, img_size);
 	
 	// ------------
 
@@ -42,11 +40,11 @@ PGM_IMG HistTest(PGM_IMG img_in) {
 }
 
 void HistogramGPU(int* d_hist_out, unsigned char* d_img_in, int img_size, int nbr_bin) {
-	int threadsPerBlock = 1024;
+	int threadsPerBlock = 512;
 	int numSMs = 192;
 
 	// Initialize the histogram
-	MemsetGPU<<<numSMs * 32, threadsPerBlock>>>(d_hist_out, nbr_bin);
+	MemsetGPU<<<1, 256>>>(d_hist_out, nbr_bin);
 
 	//Count the color
 	HistogramGPUAction<<<numSMs * 32, threadsPerBlock>>>(d_hist_out, d_img_in, img_size);
@@ -55,10 +53,10 @@ void HistogramGPU(int* d_hist_out, unsigned char* d_img_in, int img_size, int nb
 
 
 
-void ConstructLUTGPU(int* d_lut, int* d_histIn, int* d_min, int* d_d, int nbr_bin, int imgSize, int threadsPerBlock, int numSMs) {
-	ArrayMin<<<numSMs * 32, threadsPerBlock>>>(d_histIn, d_min, nbr_bin);
-	CalculateD<<<numSMs * 32, threadsPerBlock>>>(d_min, d_d, imgSize);
-	GenerateLUTGPUAction<<<numSMs * 32, threadsPerBlock>>>(d_lut, d_histIn, d_min, d_d, nbr_bin, imgSize);
+void ConstructLUTGPU(int* d_lut, int* d_histIn, int* d_min, int* d_d, int nbr_bin, int imgSize) {
+	ArrayMin<<<1, 256>>>(d_histIn, d_min, nbr_bin);
+	CalculateD<<<1, 1>>>(d_min, d_d, imgSize);
+	GenerateLUTGPUAction<<<1, 256>>>(d_lut, d_histIn, d_min, d_d, nbr_bin, imgSize);
 }
 
 __global__ void MemsetGPU(int* histOut, int size) {
@@ -99,7 +97,7 @@ __global__ void GenerateLUTGPUAction(int* lut, int* histIn, int* min, int* d_d, 
 
 // ---- Generate the new image based on the histogram ----
 void HistogramEqualizationGPU(unsigned char * img_out, int * d_lut_in , unsigned char * d_img_in, int img_size){
-	int threadsPerBlock = 256;
+	int threadsPerBlock = 512;
 	int numSMs = 192;
 
 	// Prepare device memory for output image

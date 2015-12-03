@@ -9,7 +9,7 @@ void HistogramGPU(int * hist_out, unsigned char * img_in, int img_size, int nbr_
 //void PreHistogramEqualizationGpu(unsigned char * img_out, unsigned char * img_in, int * hist_in, int img_size, int nbr_bin);
 
 //void GenerateLUTGPU(int* dLut, int* dHistIn, int* dMin, int nbr_bin, int d);
-void ConstructLUTGPU(int* dLut, int* dHistIn, int* dMin, int* dD, int nbr_bin, int imgSize, int threadsPerBlock, int numSMs);
+void ConstructLUTGPU(int* dLut, int* dHistIn, int* dMin, int* dD, int nbr_bin, int imgSize);
 
 __global__ void MemsetGPU(int * histOut, int histSize);
 __global__ void HistogramGPUAction(int * histOut, unsigned char * imgIn, int imgSize);
