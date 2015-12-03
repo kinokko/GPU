@@ -48,6 +48,9 @@ void run_gpu_gray_test(PGM_IMG img_in)
 {
     printf("Starting GPU processing...\n");
 	StopWatchInterface *timer = NULL;
+	int* startUp;
+	cudaMalloc(&startUp, sizeof(int));
+	cudaFree(startUp);
 	sdkCreateTimer(&timer);
 	sdkStartTimer(&timer);
     //TODO: run your GPU implementation here
