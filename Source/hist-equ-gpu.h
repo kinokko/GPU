@@ -6,7 +6,7 @@
 
 PGM_IMG HistTest(PGM_IMG img_in);
 void HistogramGPU(int * hist_out, unsigned char * img_in, int img_size, int nbr_bin);
-void PreHistogramEqualizationGpu(unsigned char * img_out, unsigned char * img_in, int * hist_in, int img_size, int nbr_bin);
+//void PreHistogramEqualizationGpu(unsigned char * img_out, unsigned char * img_in, int * hist_in, int img_size, int nbr_bin);
 
 //void GenerateLUTGPU(int* dLut, int* dHistIn, int* dMin, int nbr_bin, int d);
 void ConstructLUTGPU(int* dLut, int* dHistIn, int* dMin, int* dD, int nbr_bin, int imgSize, int threadsPerBlock, int numSMs);
