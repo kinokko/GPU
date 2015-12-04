@@ -34,7 +34,7 @@ PPM_IMG contrast_enhancement_c_rgb(PPM_IMG img_in)
     histogram_equalization(result.img_g,img_in.img_g,hist,result.w*result.h, 256);
     histogram(hist, img_in.img_b, img_in.h * img_in.w, 256);
     histogram_equalization(result.img_b,img_in.img_b,hist,result.w*result.h, 256);
-
+	system("pause");
     return result;
 }
 

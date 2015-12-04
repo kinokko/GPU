@@ -41,6 +41,29 @@ void run_gpu_color_test(PPM_IMG img_in)
 {
     printf("Starting GPU processing...\n");
     //TODO: run your GPU implementation here
+	StopWatchInterface *timer = NULL;
+	PPM_IMG img_obuf_hsl, img_obuf_yuv;
+
+	sdkCreateTimer(&timer);
+	sdkStartTimer(&timer);
+	img_obuf_hsl = ContrastEnhancementGHSL(img_in);
+	sdkStopTimer(&timer);
+	printf("HSL processing time: %f (ms)\n", sdkGetTimerValue(&timer));
+	sdkDeleteTimer(&timer);
+
+	write_ppm(img_obuf_hsl, "out_hsl_gpu.ppm");
+
+	sdkCreateTimer(&timer);
+	sdkStartTimer(&timer);
+	img_obuf_yuv = contrast_enhancement_c_yuv(img_in);
+	sdkStopTimer(&timer);
+	printf("YUV processing time: %f (ms)\n", sdkGetTimerValue(&timer));
+	sdkDeleteTimer(&timer);
+
+	write_ppm(img_obuf_yuv, "out_yuv_gpu.ppm");
+
+	free_ppm(img_obuf_hsl);
+	free_ppm(img_obuf_yuv);
     //img_in = img_in; // To avoid warning...
 }
 
