@@ -162,33 +162,47 @@ HSL_IMG MallocHslImageOnDevice(int width, int height){
 PPM_IMG ContrastEnhancementGHSL(PPM_IMG img_in){
 	HSL_IMG hsl_med;
 	PPM_IMG result;
-
+	size_t img_size = img_in.h* img_in.w;
 	unsigned char * l_equ;
 	int hist[256];
 	PPM_IMG d_img = CreateCopyRgbImageToDevice(img_in);
-	PPM_IMG test = CreateCopyRgbImageToDevice(d_img, true);
+	//PPM_IMG test = CreateCopyRgbImageToDevice(d_img, true);
 	HSL_IMG d_hsl_img = MallocHslImageOnDevice(img_in.w, img_in.h);
 	//hsl_med = rgb2hsl(img_in);
 	//hsl_med = rgb2hsl(CopyRgbImageToDevice(d_img, true));
 	RGB2HSL_G<<<6144,512>>>(d_hsl_img, d_img);
-	hsl_med = CreateCopyHslImageToDevice(d_hsl_img, true);
-	l_equ = (unsigned char *)malloc(hsl_med.height*hsl_med.width*sizeof(unsigned char));
 
-	histogram(hist, hsl_med.l, hsl_med.height * hsl_med.width, 256);
-	histogram_equalization(l_equ, hsl_med.l, hist, hsl_med.width*hsl_med.height, 256);
 
-	free(hsl_med.l);
-	hsl_med.l = l_equ;
+	//l_equ = (unsigned char *)malloc(hsl_med.height*hsl_med.width*sizeof(unsigned char));
 
-	result = hsl2rgb(hsl_med);
-	free(hsl_med.h);
-	free(hsl_med.s);
-	free(hsl_med.l);
+
+	//hist
+	int nbr_bin = 256;
+	int* d_hist;
+	cudaMalloc(&d_hist, sizeof(int)*nbr_bin);
+	HistogramGPU(d_hist, d_hsl_img.l,img_size, nbr_bin);
+
+	//hist_equ
+	int* d_lut;
+	cudaMalloc(&d_lut, sizeof(int)*nbr_bin);
+	int* d_min;
+	cudaMalloc(&d_min, sizeof(int));
+	int* d_d;
+	cudaMalloc(&d_d, sizeof(int));
+	ConstructLUTGPU(d_lut, d_hist, d_min, d_d, nbr_bin, img_size);
+
+	
+	HistogramEqualizationGPUAction <<<BLOCKPERGRID, THREADSPERBLOCK >>>(d_hsl_img.l, d_lut, d_hsl_img.l, img_size);
+	//histogram(hist, hsl_med.l, hsl_med.height * hsl_med.width, 256);
+	//histogram_equalization(l_equ, hsl_med.l, hist, hsl_med.width*hsl_med.height, 256);
+	//hsl_med = CreateCopyHslImageToDevice(d_hsl_img, true);
+
+	HSL2RGB_G <<<6144, 512 >>>(d_img, d_hsl_img);
+	result = CreateCopyRgbImageToDevice(d_img,true);
 	return result;
 }
 
 __global__ void RGB2HSL_G(HSL_IMG d_hsl_img, PPM_IMG d_img_in){
-
 
 	//printf("%d,%d", d_hsl_img.height, d_hsl_img.width);
 	float H, S, L;
@@ -244,6 +258,51 @@ __global__ void RGB2HSL_G(HSL_IMG d_hsl_img, PPM_IMG d_img_in){
 	}
 
 }
+__global__ void HSL2RGB_G(PPM_IMG d_img_out, HSL_IMG d_img_in)
+{
+	int size = d_img_in.height * d_img_in.width;
+	for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < size; i += blockDim.x * gridDim.x) {
+		float H = d_img_in.h[i];
+		float S = d_img_in.s[i];
+		float L = d_img_in.l[i] / 255.0f;
+		float var_1, var_2;
+
+		unsigned char r, g, b;
+
+		if (S == 0)
+		{
+			r = L * 255;
+			g = L * 255;
+			b = L * 255;
+		}
+		else
+		{
+
+			if (L < 0.5)
+				var_2 = L * (1 + S);
+			else
+				var_2 = (L + S) - (S * L);
+
+			var_1 = 2 * L - var_2;
+			r = 255 * Hue_2_RGB_G(var_1, var_2, H + (1.0f / 3.0f));
+			g = 255 * Hue_2_RGB_G(var_1, var_2, H);
+			b = 255 * Hue_2_RGB_G(var_1, var_2, H - (1.0f / 3.0f));
+		}
+		d_img_out.img_r[i] = r;
+		d_img_out.img_g[i] = g;
+		d_img_out.img_b[i] = b;
+	}
+}
+__device__ float Hue_2_RGB_G(float v1, float v2, float vH)             //Function Hue_2_RGB
+{
+	if (vH < 0) vH += 1;
+	if (vH > 1) vH -= 1;
+	if ((6 * vH) < 1) return (v1 + (v2 - v1) * 6 * vH);
+	if ((2 * vH) < 1) return (v2);
+	if ((3 * vH) < 2) return (v1 + (v2 - v1) * ((2.0f / 3.0f) - vH) * 6);
+	return (v1);
+}
+
 //End of HSL Part
 
 //Helper 

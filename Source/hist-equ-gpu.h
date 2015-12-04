@@ -31,6 +31,8 @@ __global__ void HistogramEqualizationGPUAction(unsigned char * d_img_out, int * 
 //HSL Part
 PPM_IMG ContrastEnhancementGHSL(PPM_IMG img_in);
 __global__ void RGB2HSL_G(HSL_IMG pd_hsl_img_out, PPM_IMG d_img_in);
+__global__ void HSL2RGB_G(PPM_IMG d_img_out, HSL_IMG d_img_in);
+__device__ float Hue_2_RGB_G(float v1, float v2, float vH);
 //End of HSL Part
 
 //YUV Part
