@@ -22,4 +22,20 @@ __global__ void GenerateLUTGPUAction(int* lut, int* histIn, int* min, int* dD, i
 void HistogramEqualizationGPU(unsigned char * img_out, int * d_lut_in, unsigned char * d_img_in, int img_size);
 __global__ void HistogramEqualizationGPUAction(unsigned char * d_img_out, int * d_lut_in, unsigned char * d_img_in, int imgSize);
 
+
+//************************** Colorful World ************************//
+
+
+//YUV Part
+
+
+//End of YUV Part
+
+
+//HSL Part
+
+//End of HSL Part
+
+
+
 #endif
