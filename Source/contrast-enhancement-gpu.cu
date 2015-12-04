@@ -119,11 +119,6 @@ T* CopyFromHostToDevice(T* p_data_in, bool reverse, int count = 1){
 	return p_data_out;
 }
 
-template<class T>
-T* MallocDataOnDevice(){
-
-}
-
 
 PPM_IMG CreateCopyRgbImageToDevice(PPM_IMG img_in, bool reverse = false){
 	PPM_IMG d_img_out;
@@ -158,6 +153,18 @@ HSL_IMG MallocHslImageOnDevice(int width, int height){
 	return d_hsl_img;
 }
 
+void FreeRbgImageOnDevice(PPM_IMG d_img){
+	cudaFree(d_img.img_r);
+	cudaFree(d_img.img_g);
+	cudaFree(d_img.img_b);
+}
+
+void FreeHslImageOnDevice(HSL_IMG d_hsl_img){
+	cudaFree(d_hsl_img.h);
+	cudaFree(d_hsl_img.s);
+	cudaFree(d_hsl_img.l);
+}
+
 
 PPM_IMG ContrastEnhancementGHSL(PPM_IMG img_in){
 	HSL_IMG hsl_med;
@@ -166,14 +173,10 @@ PPM_IMG ContrastEnhancementGHSL(PPM_IMG img_in){
 	unsigned char * l_equ;
 	int hist[256];
 	PPM_IMG d_img = CreateCopyRgbImageToDevice(img_in);
-	//PPM_IMG test = CreateCopyRgbImageToDevice(d_img, true);
+
 	HSL_IMG d_hsl_img = MallocHslImageOnDevice(img_in.w, img_in.h);
-	//hsl_med = rgb2hsl(img_in);
-	//hsl_med = rgb2hsl(CopyRgbImageToDevice(d_img, true));
-	RGB2HSL_G<<<6144,512>>>(d_hsl_img, d_img);
 
-
-	//l_equ = (unsigned char *)malloc(hsl_med.height*hsl_med.width*sizeof(unsigned char));
+	RGB2HSL_G<<<BLOCKPERGRID,THREADSPERBLOCK>>>(d_hsl_img, d_img);
 
 
 	//hist
@@ -191,20 +194,23 @@ PPM_IMG ContrastEnhancementGHSL(PPM_IMG img_in){
 	cudaMalloc(&d_d, sizeof(int));
 	ConstructLUTGPU(d_lut, d_hist, d_min, d_d, nbr_bin, img_size);
 
-	
+	//generate image
 	HistogramEqualizationGPUAction <<<BLOCKPERGRID, THREADSPERBLOCK >>>(d_hsl_img.l, d_lut, d_hsl_img.l, img_size);
-	//histogram(hist, hsl_med.l, hsl_med.height * hsl_med.width, 256);
-	//histogram_equalization(l_equ, hsl_med.l, hist, hsl_med.width*hsl_med.height, 256);
-	//hsl_med = CreateCopyHslImageToDevice(d_hsl_img, true);
 
-	HSL2RGB_G <<<6144, 512 >>>(d_img, d_hsl_img);
+	HSL2RGB_G <<<BLOCKPERGRID, THREADSPERBLOCK >>>(d_img, d_hsl_img);
 	result = CreateCopyRgbImageToDevice(d_img,true);
+
+	cudaFree(d_hist);
+	cudaFree(d_lut);
+	cudaFree(d_min);
+	cudaFree(d_d);
+	FreeHslImageOnDevice(d_hsl_img);
+	FreeRbgImageOnDevice(d_img);
 	return result;
 }
 
 __global__ void RGB2HSL_G(HSL_IMG d_hsl_img, PPM_IMG d_img_in){
 
-	//printf("%d,%d", d_hsl_img.height, d_hsl_img.width);
 	float H, S, L;
 	int size = d_img_in.h*d_img_in.w;
 	for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < size; i += blockDim.x * gridDim.x) {
