@@ -6,7 +6,27 @@
 #include "hist-equ.h"
 
 
+// helper
+void FreeRbgImageOnDevice(PPM_IMG d_img){
+	cudaFree(d_img.img_r);
+	cudaFree(d_img.img_g);
+	cudaFree(d_img.img_b);
+}
+
+void FreeHslImageOnDevice(HSL_IMG d_hsl_img){
+	cudaFree(d_hsl_img.h);
+	cudaFree(d_hsl_img.s);
+	cudaFree(d_hsl_img.l);
+}
+
+void FreeYuvImageOnDevice(YUV_IMG d_img) {
+	cudaFree(d_img.img_y);
+	cudaFree(d_img.img_u);
+	cudaFree(d_img.img_v);
+}
 //YUV Part
+
+
 PPM_IMG ContrastEnhancementGYUV(PPM_IMG img_in) {
 	int img_size = img_in.w * img_in.h;
 	int img_data_size = img_size * sizeof(unsigned char);
@@ -66,6 +86,15 @@ PPM_IMG ContrastEnhancementGYUV(PPM_IMG img_in) {
 	cudaMemcpy(h_img_rgb.img_r, d_img_rgb.img_r, img_data_size, cudaMemcpyDeviceToHost);
 	cudaMemcpy(h_img_rgb.img_g, d_img_rgb.img_g, img_data_size, cudaMemcpyDeviceToHost);
 	cudaMemcpy(h_img_rgb.img_b, d_img_rgb.img_b, img_data_size, cudaMemcpyDeviceToHost);
+
+
+	//free cuda memory
+	cudaFree(d_lut);
+	cudaFree(d_min);
+	cudaFree(d_d);
+	FreeRbgImageOnDevice(d_img_rgb);
+	FreeYuvImageOnDevice(d_img_yuv);
+
 	return h_img_rgb;
 }
 
@@ -153,17 +182,7 @@ HSL_IMG MallocHslImageOnDevice(int width, int height){
 	return d_hsl_img;
 }
 
-void FreeRbgImageOnDevice(PPM_IMG d_img){
-	cudaFree(d_img.img_r);
-	cudaFree(d_img.img_g);
-	cudaFree(d_img.img_b);
-}
 
-void FreeHslImageOnDevice(HSL_IMG d_hsl_img){
-	cudaFree(d_hsl_img.h);
-	cudaFree(d_hsl_img.s);
-	cudaFree(d_hsl_img.l);
-}
 
 
 PPM_IMG ContrastEnhancementGHSL(PPM_IMG img_in){
