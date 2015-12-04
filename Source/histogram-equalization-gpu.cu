@@ -36,6 +36,13 @@ PGM_IMG HistTest(PGM_IMG img_in) {
 	result.img = (unsigned char *)malloc(result.w * result.h * sizeof(unsigned char));
 	HistogramEqualizationGPU(result.img, d_lut, d_img_in, img_in.h * img_in.w);
 
+	//free cuda memory
+	cudaFree(d_hist);
+	cudaFree(d_img_in);
+	cudaFree(d_lut);
+	cudaFree(d_min);
+	cudaFree(d_d);
+
 	return result;
 }
 
@@ -54,8 +61,8 @@ void HistogramGPU(int* d_hist_out, unsigned char* d_img_in, int img_size, int nb
 
 
 void ConstructLUTGPU(int* d_lut, int* d_histIn, int* d_min, int* d_d, int nbr_bin, int imgSize) {
-	ArrayMin<<<1, 256>>>(d_histIn, d_min, nbr_bin);
-	CalculateD<<<1, 1>>>(d_min, d_d, imgSize);
+	ArrayMin<<<1, 256>>>(d_d, d_min, d_histIn, nbr_bin);
+	//CalculateD<<<1, 1>>>(d_min, d_d, imgSize);
 	GenerateLUTGPUAction<<<1, 256>>>(d_lut, d_histIn, d_min, d_d, nbr_bin, imgSize);
 }
 
@@ -70,15 +77,14 @@ __global__ void HistogramGPUAction(int * histOut, unsigned char * imgIn, int img
 		atomicAdd(&histOut[imgIn[i]], 1);
 	}
 }
-__global__ void ArrayMin(int* dataIn, int* min, int size) {
+__global__ void ArrayMin(int* min_out, int* d_out, int* dataIn, int size) {
 	for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < size; i += blockDim.x * gridDim.x) {
-		atomicMin(min, dataIn[i]);
+		atomicMin(min_out, dataIn[i]);
 	}
-}
-
-
-__global__ void CalculateD(int* min, int* d, int imgSize) {
-	*d = imgSize - *min;
+	__syncthreads();
+	if (blockIdx.x == 0 && threadIdx.x == 0) {
+		*d_out = size - *min_out;
+	}
 }
 
 __global__ void GenerateLUTGPUAction(int* lut, int* histIn, int* min, int* d_d, int nbr_bin, int imgSize) {
@@ -97,7 +103,7 @@ __global__ void GenerateLUTGPUAction(int* lut, int* histIn, int* min, int* d_d, 
 
 // ---- Generate the new image based on the histogram ----
 void HistogramEqualizationGPU(unsigned char * img_out, int * d_lut_in , unsigned char * d_img_in, int img_size){
-	int threadsPerBlock = 512;
+	int threadsPerBlock = 1024;
 	int numSMs = 192;
 
 	// Prepare device memory for output image

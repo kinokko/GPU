@@ -46,6 +46,8 @@ void run_gpu_color_test(PPM_IMG img_in)
 
 void run_gpu_gray_test(PGM_IMG img_in)
 {
+	float* startup;
+	cudaMalloc(&startup, 1);
     printf("Starting GPU processing...\n");
 	StopWatchInterface *timer = NULL;
 	int* startUp;

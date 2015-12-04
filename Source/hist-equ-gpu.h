@@ -13,8 +13,7 @@ void ConstructLUTGPU(int* dLut, int* dHistIn, int* dMin, int* dD, int nbr_bin, i
 
 __global__ void MemsetGPU(int * histOut, int histSize);
 __global__ void HistogramGPUAction(int * histOut, unsigned char * imgIn, int imgSize);
-__global__ void ArrayMin(int* dataIn, int* min, int size);
-__global__ void CalculateD(int* min, int* d, int imgSize);
+__global__ void ArrayMin(int* min_out, int* d_out, int* dataIn, int size);
 __global__ void GenerateLUTGPUAction(int* lut, int* histIn, int* min, int* dD, int nbr_bin, int imgSize);
 
 
