@@ -36,6 +36,11 @@ PGM_IMG HistTest(PGM_IMG img_in) {
 	result.img = (unsigned char *)malloc(result.w * result.h * sizeof(unsigned char));
 	HistogramEqualizationGPU(result.img, d_lut, d_img_in, img_in.h * img_in.w);
 
+	cudaFree(d_img_in);
+	cudaFree(d_lut);
+	cudaFree(d_min);
+	cudaFree(d_d);
+
 	return result;
 }
 
@@ -107,7 +112,7 @@ void HistogramEqualizationGPU(unsigned char * img_out, int * d_lut_in , unsigned
 	cudaDeviceSynchronize();
 	// Copy output image back to host memory
 	cudaMemcpy(img_out, d_img_out, img_size, cudaMemcpyDeviceToHost);
-
+	cudaFree(d_img_out);
 }
 
 __global__ void HistogramEqualizationGPUAction(unsigned char * d_img_out, int * d_lut_in, unsigned char * d_img_in, int imgSize) {
