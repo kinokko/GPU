@@ -27,7 +27,9 @@ __global__ void HistogramEqualizationGPUAction(unsigned char * d_img_out, int * 
 
 PPM_IMG ContrastEnhancementGHSL(PPM_IMG img_in);
 //YUV Part
+void ContrastEnhancementGYUV(PPM_IMG img_in);
 
+__global__ void RGB2YUV_G(YUV_IMG img_out, PPM_IMG img_in, int img_size);
 
 //End of YUV Part
 
@@ -37,7 +39,7 @@ PPM_IMG ContrastEnhancementGHSL(PPM_IMG img_in);
 //End of HSL Part
 
 //Start Helper
-__device__ unsigned char clip_rgb(int x);
+__device__ unsigned char clip_rgb_gpu(int x);
 //End helper
 
 #endif
