@@ -1,5 +1,5 @@
+
 #include "hist-equ-gpu.h"
-#include <iostream>
 
 
 PGM_IMG HistTest(PGM_IMG img_in) {
@@ -53,15 +53,15 @@ void HistogramGPU(int* d_hist_out, unsigned char* d_img_in, int img_size, int nb
 
 	//Count the color
 	HistogramGPUAction<<<numSMs * 32, threadsPerBlock>>>(d_hist_out, d_img_in, img_size);
-	
 }
 
 
 
-void ConstructLUTGPU(int* d_lut, int* d_histIn, int* d_min, int* d_d, int nbr_bin, int imgSize) {
-	ArrayMin<<<1, 256>>>(d_histIn, d_min, nbr_bin);
-	CalculateD<<<1, 1>>>(d_min, d_d, imgSize);
-	GenerateLUTGPUAction<<<1, 256>>>(d_lut, d_histIn, d_min, d_d, nbr_bin, imgSize);
+void ConstructLUTGPU(int* d_lut, int* d_histIn, int* d_min_idx, int* d_d, int nbr_bin, int imgSize) {
+	cudaMemcpy(d_min_idx, &nbr_bin, sizeof(int), cudaMemcpyHostToDevice);
+	ArrayMin<<<1, 256>>>(d_histIn, d_min_idx, nbr_bin);
+	CalculateD<<<1,1>>>(d_d, d_histIn, d_min_idx, imgSize);
+	GenerateLUTGPUAction<<<1, 256>>>(d_lut, d_histIn, d_min_idx, d_d, nbr_bin, imgSize);
 }
 
 __global__ void MemsetGPU(int* histOut, int size) {
@@ -75,25 +75,27 @@ __global__ void HistogramGPUAction(int * histOut, unsigned char * imgIn, int img
 		atomicAdd(&histOut[imgIn[i]], 1);
 	}
 }
-__global__ void ArrayMin(int* dataIn, int* min, int size) {
+__global__ void ArrayMin(int* dataIn, int* min_idx, int size) {
 	for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < size; i += blockDim.x * gridDim.x) {
-		atomicMin(min, dataIn[i]);
+		if(dataIn[i] != 0) {
+			atomicMin(min_idx, i);
+		}
 	}
 }
 
 
-__global__ void CalculateD(int* min, int* d, int imgSize) {
-	*d = imgSize - *min;
+__global__ void CalculateD(int* d_out, int* hist_in, int* min_idx, int imgSize) {
+	*d_out = imgSize - hist_in[*min_idx];
 }
 
 __global__ void GenerateLUTGPUAction(int* lut, int* histIn, int* min, int* d_d, int nbr_bin, int imgSize) {
 	
 	for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < nbr_bin; i += blockDim.x * gridDim.x) {
 		int cdf = 0;
-		for (int index = 0; index < i; index++) {
+		for (int index = 0; index <= i; index++) {
 			cdf += histIn[index];
 		}
-		lut[i] = (int)(((float)cdf - *min) * 255 / *d_d + 0.5);
+		lut[i] = (int)(((float)cdf - histIn[*min]) * 255 / *d_d + 0.5);
 		if (lut[i] < 0){
 			lut[i] = 0;
 		}
