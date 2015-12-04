@@ -55,7 +55,7 @@ void run_gpu_color_test(PPM_IMG img_in)
 
 	sdkCreateTimer(&timer);
 	sdkStartTimer(&timer);
-	img_obuf_yuv = contrast_enhancement_c_yuv(img_in);
+	img_obuf_yuv = ContrastEnhancementGYUV(img_in);
 	sdkStopTimer(&timer);
 	printf("YUV processing time: %f (ms)\n", sdkGetTimerValue(&timer));
 	sdkDeleteTimer(&timer);
