@@ -4,7 +4,7 @@
 #include "hist-equ.h"
 #include <cuda_runtime.h>
 
-#define BLOCKPERGRID 192
+#define BLOCKPERGRID 6144
 #define THREADSPERBLOCK 512
 
 PGM_IMG HistTest(PGM_IMG img_in);
@@ -34,9 +34,10 @@ __global__ void RGB2HSL_G(HSL_IMG pd_hsl_img_out, PPM_IMG d_img_in);
 //End of HSL Part
 
 //YUV Part
-void ContrastEnhancementGYUV(PPM_IMG img_in);
+PPM_IMG ContrastEnhancementGYUV(PPM_IMG img_in);
 
 __global__ void RGB2YUV_G(YUV_IMG d_img_out, PPM_IMG d_img_in, int img_size);
+__global__ void YUV2RGB_G(PPM_IMG d_img_out, YUV_IMG d_img_in, int img_size);
 
 //End of YUV Part
 
