@@ -25,7 +25,7 @@ __global__ void HistogramEqualizationGPUAction(unsigned char * d_img_out, int * 
 
 //************************** Colorful World ************************//
 
-
+PPM_IMG ContrastEnhancementGHSL(PPM_IMG img_in);
 //YUV Part
 
 
