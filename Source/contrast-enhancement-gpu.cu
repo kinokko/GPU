@@ -105,12 +105,50 @@ __global__ void YUV2RGB_G(PPM_IMG d_img_out, YUV_IMG d_img_in, int img_size) {
 
 
 //HSL Part
+template<class T>
+T* CopyFromHostToDevice(T* p_data_in, bool reverse, int count = 1){
+	T* p_data_out;
+	size_t size = sizeof(T) * count;
+	cudaMalloc(&p_data_out, size);
+	cudaMemcpy(p_data_out, p_data_in, size, reverse ? cudaMemcpyDeviceToHost : cudaMemcpyHostToDevice);
+	return p_data_out;
+}
+
+template<class T>
+T* MallocDataOnDevice(){
+
+}
+
+
+PPM_IMG* CopyRgbImageToDevice(PPM_IMG img_in, bool reverse = false){
+	PPM_IMG* pd_img_out = CopyFromHostToDevice(&img_in, reverse);
+	int count = img_in.h* img_in.w;
+	//pointer members
+	pd_img_out->img_r = CopyFromHostToDevice(img_in.img_r, reverse, count);
+	pd_img_out->img_g = CopyFromHostToDevice(img_in.img_g, reverse, count);
+	pd_img_out->img_b = CopyFromHostToDevice(img_in.img_b, reverse, count);
+	return &img_in;
+}
+
+HSL_IMG* MallocHslImageOnDevice(int width, int height){
+	HSL_IMG* pd_hsl_img;
+	size_t size = width*height;
+	cudaMalloc(&pd_hsl_img, sizeof(HSL_IMG));
+	pd_hsl_img->width = width;
+	pd_hsl_img->height = height;
+	return pd_hsl_img;
+}
+
+
+
 PPM_IMG ContrastEnhancementGHSL(PPM_IMG img_in){
 	HSL_IMG hsl_med;
 	PPM_IMG result;
 
 	unsigned char * l_equ;
 	int hist[256];
+	PPM_IMG* pd_img = CopyRgbImageToDevice(img_in);
+	HSL_IMG* pd_hsl_img;
 
 	hsl_med = rgb2hsl(img_in);
 	l_equ = (unsigned char *)malloc(hsl_med.height*hsl_med.width*sizeof(unsigned char));
@@ -126,6 +164,10 @@ PPM_IMG ContrastEnhancementGHSL(PPM_IMG img_in){
 	free(hsl_med.s);
 	free(hsl_med.l);
 	return result;
+}
+
+__global__ void RGB2HSL_G(HSL_IMG* pd_hsl_img_out, PPM_IMG* pd_img_in){
+
 }
 //End of HSL Part
 
