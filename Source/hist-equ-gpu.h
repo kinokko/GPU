@@ -36,6 +36,8 @@ __global__ void HistogramEqualizationGPUAction(unsigned char * d_img_out, int * 
 
 //End of HSL Part
 
-
+//Start Helper
+__device__ unsigned char clip_rgb(int x);
+//End helper
 
 #endif
