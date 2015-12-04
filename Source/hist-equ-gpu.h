@@ -30,7 +30,7 @@ __global__ void HistogramEqualizationGPUAction(unsigned char * d_img_out, int * 
 
 //HSL Part
 PPM_IMG ContrastEnhancementGHSL(PPM_IMG img_in);
-
+__global__ void RGB2HSL_G(HSL_IMG pd_hsl_img_out, PPM_IMG d_img_in);
 //End of HSL Part
 
 //YUV Part

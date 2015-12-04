@@ -58,7 +58,12 @@ template<class T>
 T* CopyFromHostToDevice(T* p_data_in, bool reverse, int count = 1){
 	T* p_data_out;
 	size_t size = sizeof(T) * count;
-	cudaMalloc(&p_data_out, size);
+	if (reverse){
+		p_data_out = (T*)malloc(size);
+	}
+	else{
+		cudaMalloc(&p_data_out, size);
+	}
 	cudaMemcpy(p_data_out, p_data_in, size, reverse ? cudaMemcpyDeviceToHost : cudaMemcpyHostToDevice);
 	return p_data_out;
 }
@@ -69,25 +74,38 @@ T* MallocDataOnDevice(){
 }
 
 
-PPM_IMG* CopyRgbImageToDevice(PPM_IMG img_in, bool reverse = false){
-	PPM_IMG* pd_img_out = CopyFromHostToDevice(&img_in, reverse);
-	int count = img_in.h* img_in.w;
-	//pointer members
-	pd_img_out->img_r = CopyFromHostToDevice(img_in.img_r, reverse, count);
-	pd_img_out->img_g = CopyFromHostToDevice(img_in.img_g, reverse, count);
-	pd_img_out->img_b = CopyFromHostToDevice(img_in.img_b, reverse, count);
-	return &img_in;
+PPM_IMG CreateCopyRgbImageToDevice(PPM_IMG img_in, bool reverse = false){
+	PPM_IMG d_img_out;
+	d_img_out.w = img_in.w;
+	d_img_out.h = img_in.h;
+	int img_size = img_in.h* img_in.w;
+	d_img_out.img_r = CopyFromHostToDevice(img_in.img_r, reverse, img_size);
+	d_img_out.img_g = CopyFromHostToDevice(img_in.img_g, reverse, img_size);
+	d_img_out.img_b = CopyFromHostToDevice(img_in.img_b, reverse, img_size);
+	return d_img_out;
 }
 
-HSL_IMG* MallocHslImageOnDevice(int width, int height){
-	HSL_IMG* pd_hsl_img;
-	size_t size = width*height;
-	cudaMalloc(&pd_hsl_img, sizeof(HSL_IMG));
-	pd_hsl_img->width = width;
-	pd_hsl_img->height = height;
-	return pd_hsl_img;
+HSL_IMG CreateCopyHslImageToDevice(HSL_IMG img_in, bool reverse = false){
+	HSL_IMG d_img_out;
+	d_img_out.width = img_in.width;
+	d_img_out.height = img_in.height;
+	int img_size = img_in.height* img_in.width;
+	d_img_out.h = CopyFromHostToDevice(img_in.h, reverse, img_size);
+	d_img_out.s = CopyFromHostToDevice(img_in.s, reverse, img_size);
+	d_img_out.l = CopyFromHostToDevice(img_in.l, reverse, img_size);
+	return d_img_out;
 }
 
+HSL_IMG MallocHslImageOnDevice(int width, int height){
+	HSL_IMG d_hsl_img;
+	size_t img_size = width*height;
+	d_hsl_img.width = width;
+	d_hsl_img.height = height;
+	cudaMalloc(&d_hsl_img.h, sizeof(float)* img_size);
+	cudaMalloc(&d_hsl_img.s, sizeof(float)* img_size);
+	cudaMalloc(&d_hsl_img.l, sizeof(unsigned char)* img_size);
+	return d_hsl_img;
+}
 
 
 PPM_IMG ContrastEnhancementGHSL(PPM_IMG img_in){
@@ -96,10 +114,13 @@ PPM_IMG ContrastEnhancementGHSL(PPM_IMG img_in){
 
 	unsigned char * l_equ;
 	int hist[256];
-	PPM_IMG* pd_img = CopyRgbImageToDevice(img_in);
-	HSL_IMG* pd_hsl_img;
-
-	hsl_med = rgb2hsl(img_in);
+	PPM_IMG d_img = CreateCopyRgbImageToDevice(img_in);
+	PPM_IMG test = CreateCopyRgbImageToDevice(d_img, true);
+	HSL_IMG d_hsl_img = MallocHslImageOnDevice(img_in.w, img_in.h);
+	//hsl_med = rgb2hsl(img_in);
+	//hsl_med = rgb2hsl(CopyRgbImageToDevice(d_img, true));
+	RGB2HSL_G<<<6144,512>>>(d_hsl_img, d_img);
+	hsl_med = CreateCopyHslImageToDevice(d_hsl_img, true);
 	l_equ = (unsigned char *)malloc(hsl_med.height*hsl_med.width*sizeof(unsigned char));
 
 	histogram(hist, hsl_med.l, hsl_med.height * hsl_med.width, 256);
@@ -115,7 +136,61 @@ PPM_IMG ContrastEnhancementGHSL(PPM_IMG img_in){
 	return result;
 }
 
-__global__ void RGB2HSL_G(HSL_IMG* pd_hsl_img_out, PPM_IMG* pd_img_in){
+__global__ void RGB2HSL_G(HSL_IMG d_hsl_img, PPM_IMG d_img_in){
+
+
+	//printf("%d,%d", d_hsl_img.height, d_hsl_img.width);
+	float H, S, L;
+	int size = d_img_in.h*d_img_in.w;
+	for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < size; i += blockDim.x * gridDim.x) {
+		float var_r = ((float)d_img_in.img_r[i] / 255);//Convert RGB to [0,1]
+		float var_g = ((float)d_img_in.img_g[i] / 255);
+		float var_b = ((float)d_img_in.img_b[i] / 255);
+		float var_min = (var_r < var_g) ? var_r : var_g;
+		var_min = (var_min < var_b) ? var_min : var_b;   //min. value of RGB
+		float var_max = (var_r > var_g) ? var_r : var_g;
+		var_max = (var_max > var_b) ? var_max : var_b;   //max. value of RGB
+		float del_max = var_max - var_min;               //Delta RGB value
+
+		L = (var_max + var_min) / 2;
+		if (del_max == 0)//This is a gray, no chroma...
+		{
+			H = 0;
+			S = 0;
+		}
+		else                                    //Chromatic data...
+		{
+			if (L < 0.5)
+				S = del_max / (var_max + var_min);
+			else
+				S = del_max / (2 - var_max - var_min);
+
+			float del_r = (((var_max - var_r) / 6) + (del_max / 2)) / del_max;
+			float del_g = (((var_max - var_g) / 6) + (del_max / 2)) / del_max;
+			float del_b = (((var_max - var_b) / 6) + (del_max / 2)) / del_max;
+			if (var_r == var_max){
+				H = del_b - del_g;
+			}
+			else{
+				if (var_g == var_max){
+					H = (1.0 / 3.0) + del_r - del_b;
+				}
+				else{
+					H = (2.0 / 3.0) + del_g - del_r;
+				}
+			}
+
+		}
+
+		if (H < 0)
+			H += 1;
+		if (H > 1)
+			H -= 1;
+
+		d_hsl_img.h[i] = H;
+		d_hsl_img.s[i] = S;
+		d_hsl_img.l[i] = (unsigned char)(L * 255);
+	}
 
 }
 //End of HSL Part
