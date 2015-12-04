@@ -37,7 +37,7 @@ PPM_IMG ContrastEnhancementGHSL(PPM_IMG img_in);
 //End of HSL Part
 
 //Start Helper
-__device__ unsigned char clip_rgb(int x);
+__device__ unsigned char clip_rgb_gpu(int x);
 //End helper
 
 #endif
