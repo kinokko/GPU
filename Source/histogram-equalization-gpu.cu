@@ -118,6 +118,21 @@ void HistogramEqualizationGPU(unsigned char * img_out, int * d_lut_in , unsigned
 }
 
 __global__ void HistogramEqualizationGPUAction(unsigned char * d_img_out, int * d_lut_in, unsigned char * d_img_in, int imgSize) {
+	//__shared__ int loc_lut[256];
+	//__syncthreads();
+	//for (int i = threadIdx.x; i < 256; i += blockDim.x) {
+	//	loc_lut[i] = d_lut_in[i];
+	//}
+	//__syncthreads();
+	//for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < imgSize; i += blockDim.x * gridDim.x) {
+	//	if (loc_lut[d_img_in[i]] > 255){
+	//		d_img_out[i] = 255;	
+	//	}
+	//	else{
+	//		d_img_out[i] = (unsigned char)loc_lut[d_img_in[i]];
+	//	}
+	//}
+
 	for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < imgSize; i += blockDim.x * gridDim.x) {
 		if (d_lut_in[d_img_in[i]] > 255){
 			d_img_out[i] = 255;	
