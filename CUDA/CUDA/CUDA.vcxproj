@@ -24,6 +24,7 @@
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="..\..\Source\contrast-enhancement-gpu.cu" />
+    <CudaCompile Include="..\..\Source\histogram-equalization-gpu-share.cu" />
     <CudaCompile Include="..\..\Source\histogram-equalization-gpu.cu" />
     <CudaCompile Include="..\..\Source\main.cu" />
   </ItemGroup>
@@ -106,6 +107,8 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     </CudaCompile>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
+      <CodeGeneration>
+      </CodeGeneration>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">

@@ -71,7 +71,11 @@ PPM_IMG ContrastEnhancementGYUV(PPM_IMG img_in) {
 
 	unsigned char* proceed_img;
 	cudaMalloc(&proceed_img, img_data_size);
+#ifdef SHARED
+	HistogramEqualizationGPUAction<<<BLOCKPERGRID, THREADSPERBLOCK, 1024*sizeof(unsigned char)>>>(proceed_img, d_lut, d_img_yuv.img_y, img_size);
+#else
 	HistogramEqualizationGPUAction<<<BLOCKPERGRID, THREADSPERBLOCK>>>(proceed_img, d_lut, d_img_yuv.img_y, img_size);
+#endif
 	cudaFree(d_img_yuv.img_y);
 	d_img_yuv.img_y = proceed_img;
 
@@ -214,7 +218,11 @@ PPM_IMG ContrastEnhancementGHSL(PPM_IMG img_in){
 	ConstructLUTGPU(d_lut, d_hist, d_min, d_d, nbr_bin, img_size);
 
 	//generate image
-	HistogramEqualizationGPUAction <<<BLOCKPERGRID, THREADSPERBLOCK >>>(d_hsl_img.l, d_lut, d_hsl_img.l, img_size);
+#ifdef SHARED
+	HistogramEqualizationGPUAction <<<BLOCKPERGRID, THREADSPERBLOCK, 1024*sizeof(unsigned char) >>>(d_hsl_img.l, d_lut, d_hsl_img.l, img_size);
+#else
+	HistogramEqualizationGPUAction <<<BLOCKPERGRID, THREADSPERBLOCK>>>(d_hsl_img.l, d_lut, d_hsl_img.l, img_size);
+#endif
 
 	HSL2RGB_G <<<BLOCKPERGRID, THREADSPERBLOCK >>>(d_img, d_hsl_img);
 	result = CreateCopyRgbImageToDevice(d_img,true);

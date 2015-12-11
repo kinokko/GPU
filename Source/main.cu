@@ -22,6 +22,10 @@ int main(){
     PGM_IMG img_ibuf_g;
     PPM_IMG img_ibuf_c;
     
+	int* startUp;
+	cudaMalloc(&startUp, sizeof(int));
+	cudaFree(startUp);
+
     printf("Running contrast enhancement for gray-scale images.\n");
     img_ibuf_g = read_pgm("in.pgm");
     run_cpu_gray_test(img_ibuf_g);
@@ -40,6 +44,7 @@ int main(){
 void run_gpu_color_test(PPM_IMG img_in)
 {
     printf("Starting GPU processing...\n");
+
     //TODO: run your GPU implementation here
 	StopWatchInterface *timer = NULL;
 	PPM_IMG img_obuf_hsl, img_obuf_yuv;
@@ -71,9 +76,6 @@ void run_gpu_gray_test(PGM_IMG img_in)
 {
     printf("Starting GPU processing...\n");
 	StopWatchInterface *timer = NULL;
-	int* startUp;
-	cudaMalloc(&startUp, sizeof(int));
-	cudaFree(startUp);
 	sdkCreateTimer(&timer);
 	sdkStartTimer(&timer);
     //TODO: run your GPU implementation here
