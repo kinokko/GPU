@@ -11,6 +11,7 @@
 
 #include "hist-equ.h"
 #include "hist-equ-gpu.h"
+#include "Global.h"
 
 void run_cpu_color_test(PPM_IMG img_in);
 void run_gpu_color_test(PPM_IMG img_in);
@@ -18,7 +19,14 @@ void run_cpu_gray_test(PGM_IMG img_in);
 void run_gpu_gray_test(PGM_IMG img_in);
 
 
-int main(){
+int main(int argc, char *argv[]){
+	if (argc >= 1) {
+		THREADSPERBLOCK = atoi(argv[0]);
+	}
+	if (argc >= 2) {
+		BLOCKPERGRID = atoi(argv[1]);
+	}
+
     PGM_IMG img_ibuf_g;
     PPM_IMG img_ibuf_c;
     

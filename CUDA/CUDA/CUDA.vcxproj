@@ -29,6 +29,7 @@
     <CudaCompile Include="..\..\Source\main.cu" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\Source\Global.h" />
     <ClInclude Include="..\..\Source\hist-equ-gpu.h" />
     <ClInclude Include="..\..\Source\hist-equ.h" />
   </ItemGroup>
@@ -90,7 +91,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;GOODSHARE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>.;inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>

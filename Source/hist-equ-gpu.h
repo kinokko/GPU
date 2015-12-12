@@ -2,9 +2,7 @@
 #define HIST_EQU_COLOR_GPU_H
 #include "hist-equ.h"
 #include <cuda_runtime.h>
-
-#define BLOCKPERGRID 6144
-#define THREADSPERBLOCK 512
+#include "Global.h"
 
 PGM_IMG HistTest(PGM_IMG img_in);
 void HistogramGPU(int * hist_out, unsigned char * img_in, int img_size, int nbr_bin);

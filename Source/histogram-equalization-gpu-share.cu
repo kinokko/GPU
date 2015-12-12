@@ -132,7 +132,7 @@ void HistogramEqualizationGPU(unsigned char * img_out, int * d_lut_in, unsigned 
 }
 
 
-__device__ unsigned char  GetFinalPixel(unsigned char pixel, int* lut, int index) {
+__device__ unsigned char  GetFinalPixel(unsigned char pixel, int* lut) {
 	if (lut[pixel] > 255){
 		return 255;
 	}
@@ -145,7 +145,7 @@ __global__ void HistogramEqualizationGPUAction(unsigned char * d_img_out, int * 
 	for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < imgSize; i += blockDim.x * gridDim.x) {
 		extern __shared__ unsigned char result[];
 		__syncthreads();
-		result[threadIdx.x] = GetFinalPixel(d_img_in[i], d_lut_in, i);
+		result[threadIdx.x] = GetFinalPixel(d_img_in[i], d_lut_in);
 		__syncthreads();
 		d_img_out[i] = result[threadIdx.x];
 		//d_img_out[i] = GetFinalPixel(d_img_in[i], d_lut_in, i);

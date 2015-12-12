@@ -1,4 +1,4 @@
-
+#ifndef SHARED
 #include "hist-equ-gpu.h"
 
 
@@ -52,7 +52,7 @@ void HistogramGPU(int* d_hist_out, unsigned char* d_img_in, int img_size, int nb
 	MemsetGPU<<<1, 256>>>(d_hist_out, nbr_bin);
 
 	//Count the color
-	HistogramGPUAction<<<numSMs * 32, threadsPerBlock>>>(d_hist_out, d_img_in, img_size);
+	HistogramGPUAction<<<BLOCKPERGRID, THREADSPERBLOCK>>>(d_hist_out, d_img_in, img_size);
 }
 
 
@@ -118,21 +118,23 @@ void HistogramEqualizationGPU(unsigned char * img_out, int * d_lut_in , unsigned
 }
 
 __global__ void HistogramEqualizationGPUAction(unsigned char * d_img_out, int * d_lut_in, unsigned char * d_img_in, int imgSize) {
-	//__shared__ int loc_lut[256];
-	//__syncthreads();
-	//for (int i = threadIdx.x; i < 256; i += blockDim.x) {
-	//	loc_lut[i] = d_lut_in[i];
-	//}
-	//__syncthreads();
-	//for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < imgSize; i += blockDim.x * gridDim.x) {
-	//	if (loc_lut[d_img_in[i]] > 255){
-	//		d_img_out[i] = 255;	
-	//	}
-	//	else{
-	//		d_img_out[i] = (unsigned char)loc_lut[d_img_in[i]];
-	//	}
-	//}
-
+#ifdef GOODSHARE
+	__shared__ int loc_lut[256];
+	__syncthreads();
+	for (int i = threadIdx.x; i < 256; i += blockDim.x) {
+		loc_lut[i] = d_lut_in[i];
+	}
+	__syncthreads();
+	for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < imgSize; i += blockDim.x * gridDim.x) {
+		unsigned char pixel = d_img_in[i];
+		if (loc_lut[pixel] > 255){
+			d_img_out[i] = 255;	
+		}
+		else{
+			d_img_out[i] = (unsigned char)loc_lut[pixel];
+		}
+	}
+#else
 	for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < imgSize; i += blockDim.x * gridDim.x) {
 		if (d_lut_in[d_img_in[i]] > 255){
 			d_img_out[i] = 255;	
@@ -141,5 +143,7 @@ __global__ void HistogramEqualizationGPUAction(unsigned char * d_img_out, int * 
 			d_img_out[i] = (unsigned char)d_lut_in[d_img_in[i]];
 		}
 	}
+#endif
 }
 
+#endif
