@@ -26,6 +26,7 @@ set(CPPSRCS
 set(CUDASRCS
    main.cu
    histogram-equalization-gpu.cu
+   histogram-equalization-gpu-share.cu
    contrast-enhancement-gpu.cu
 )
 
