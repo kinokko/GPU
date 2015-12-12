@@ -16,6 +16,8 @@ message(STATUS ${CUDA_INCLUDE_DIRS})
 message(STATUS ${CUDA_TOOLKIT_ROOT_DIR})
 # set(CMAKE_MODULE_PATH "/usr/share/cmake/Modules" ${CMAKE_MODULE_PATH})
 
+add_definitions(-DGOODSHARE)
+
 set(CPPSRCS
    histogram-equalization.cpp
    contrast-enhancement.cpp
