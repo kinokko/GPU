@@ -22,7 +22,8 @@ void run_gpu_gray_test(PGM_IMG img_in);
 
 
 int main(int argc, char *argv[]){
-    if (argc != 2) {
+    if (argc != 3) {
+        std::cout << "Missing argument" << std::endl;
         return -1;
     }
 	if (argv[1] > 0) {
